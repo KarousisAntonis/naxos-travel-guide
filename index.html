@@ -433,7 +433,7 @@ function renderMarkers(cat) {
         <div class="popup-cat" style="color:${color}">${catLabels[loc.cat] || loc.cat}</div>
         <div class="popup-name">${loc.name}</div>
         <div class="popup-desc">${loc.desc}</div>
-        <a class="popup-link" href="${loc.gmaps}" target="_blank">Άνοιγμα στο Google Maps ↗</a>
+        <a class="popup-link" href="${loc.gmaps}" target="_blank">Open in Google Maps ↗</a>
       </div>`;
 
     marker.bindPopup(popupHTML, { maxWidth: 260 });
