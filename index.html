@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naxian Garden of Senses — Travel Guide</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background: #f5f0e8;
+    color: #2c2416;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 14px 20px 10px;
+    background: #2c2416;
+    color: #f5f0e8;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(245,240,232,0.3);
+    background: transparent;
+    color: #f5f0e8;
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .filter-btn:hover { background: rgba(245,240,232,0.12); }
+
+  .filter-btn.active {
+    background: #c8a96e;
+    border-color: #c8a96e;
+    color: #2c2416;
+    font-weight: 500;
+  }
+
+  #map {
+    flex: 1;
+    z-index: 1;
+  }
+
+  /* Popup styling */
+  .leaflet-popup-content-wrapper {
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(44,36,22,0.18);
+    border: none;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .leaflet-popup-content {
+    margin: 0;
+    min-width: 200px;
+  }
+
+  .popup-inner {
+    padding: 14px 16px;
+  }
+
+  .popup-cat {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .popup-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c2416;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+
+  .popup-desc {
+    font-size: 13px;
+    color: #5a4e3a;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .popup-link {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #2c2416;
+    text-decoration: none;
+    border-bottom: 1.5px solid #c8a96e;
+    padding-bottom: 1px;
+  }
+
+  /* Custom marker dots */
+  .marker-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2.5px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+
+  /* Legend */
+  .legend {
+    position: absolute;
+    bottom: 24px;
+    right: 12px;
+    z-index: 999;
+    background: rgba(44,36,22,0.88);
+    backdrop-filter: blur(4px);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: #f5f0e8;
+  }
+
+  .legend-title {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    color: #c8a96e;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Naxian Garden — Travel Guide</h1>
+  <div class="filters">
+    <button class="filter-btn active" data-cat="all">Όλα</button>
+    <button class="filter-btn" data-cat="food">🍽 Φαγητό</button>
+    <button class="filter-btn" data-cat="beach">🏖 Παραλίες</button>
+    <button class="filter-btn" data-cat="sights">🏛 Αξιοθέατα</button>
+    <button class="filter-btn" data-cat="nightlife">🌙 Νυχτερινή ζωή</button>
+    <button class="filter-btn" data-cat="nature">🌿 Φύση</button>
+    <button class="filter-btn" data-cat="shopping">🛍 Shopping</button>
+  </div>
+</header>
+
+<div id="map"></div>
+
+<div class="legend">
+  <div class="legend-title">Κατηγορίες</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e07b54"></div> Φαγητό</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4a9fc7"></div> Παραλίες</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#8b6db5"></div> Αξιοθέατα</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2c2416"></div> Νυχτερινή ζωή</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#5a9e6f"></div> Φύση</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c8a96e"></div> Shopping</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+// ============================================================
+// ΔΕΔΟΜΕΝΑ — Εδώ προσθέτεις / αλλάζεις τα locations σου
+// ============================================================
+const locations = [
+  {
+    name: "Taverna Platia",
+    cat: "food",
+    lat: 37.1040,
+    lng: 25.3760,
+    desc: "Παραδοσιακή ταβέρνα στην παλιά πόλη. Δοκίμασε το αρνί Νάξου.",
+    gmaps: "https://maps.google.com/?q=Taverna+Platia+Naxos"
+  },
+  {
+    name: "Παραλία Αγίου Προκοπίου",
+    cat: "beach",
+    lat: 37.0680,
+    lng: 25.3500,
+    desc: "Μία από τις καλύτερες παραλίες της Νάξου. Οργανωμένη, ρηχά νερά.",
+    gmaps: "https://maps.google.com/?q=Agios+Prokopios+Beach+Naxos"
+  },
+  {
+    name: "Πορτάρα",
+    cat: "sights",
+    lat: 37.1065,
+    lng: 25.3730,
+    desc: "Το εμβληματικό σύμβολο της Νάξου. Αρχαία πύλη του ναού του Απόλλωνα.",
+    gmaps: "https://maps.google.com/?q=Portara+Naxos"
+  },
+  {
+    name: "Παραλία Πλάκα",
+    cat: "beach",
+    lat: 37.0520,
+    lng: 25.3420,
+    desc: "Μακριά αμμουδιά με κρυστάλλινα νερά. Ιδανική για ήσυχες βουτιές.",
+    gmaps: "https://maps.google.com/?q=Plaka+Beach+Naxos"
+  },
+  {
+    name: "Κάστρο Νάξου",
+    cat: "sights",
+    lat: 37.1055,
+    lng: 25.3740,
+    desc: "Βενετσιάνικο κάστρο του 13ου αιώνα με μαγευτική θέα στο Αιγαίο.",
+    gmaps: "https://maps.google.com/?q=Naxos+Castle"
+  },
+  {
+    name: "Zeus Cave (Σπήλαιο Ζα)",
+    cat: "nature",
+    lat: 37.0640,
+    lng: 25.4820,
+    desc: "Σπήλαιο στο βουνό Ζα — κατά παράδοση τόπος γέννησης του Δία.",
+    gmaps: "https://maps.google.com/?q=Zeus+Cave+Naxos"
+  },
+  {
+    name: "To Ellinikon",
+    cat: "food",
+    lat: 37.1035,
+    lng: 25.3770,
+    desc: "Μεζεδοπωλείο με τοπικά προϊόντα Νάξου. Υπέροχος χταπόδας.",
+    gmaps: "https://maps.google.com/?q=To+Ellinikon+Naxos"
+  },
+  {
+    name: "Naxian Collection",
+    cat: "shopping",
+    lat: 37.1048,
+    lng: 25.3755,
+    desc: "Τοπικά προϊόντα: τυριά, λικέρ κιτρό, γλυκά. Ιδανικό για δώρα.",
+    gmaps: "https://maps.google.com/?q=Naxian+Collection"
+  },
+  {
+    name: "Ocean Club",
+    cat: "nightlife",
+    lat: 37.1030,
+    lng: 25.3745,
+    desc: "Beach bar με cocktails και μουσική. Τέλειο για ηλιοβασίλεμα.",
+    gmaps: "https://maps.google.com/?q=Ocean+Club+Naxos"
+  },
+  {
+    name: "Κορώνος — Χωριό στα βουνά",
+    cat: "nature",
+    lat: 37.1140,
+    lng: 25.4750,
+    desc: "Ορεινό χωριό με καταπράσινα μονοπάτια και παραδοσιακές ταβέρνες.",
+    gmaps: "https://maps.google.com/?q=Koronos+Naxos"
+  }
+];
+// ============================================================
+
+const catColors = {
+  food:      "#e07b54",
+  beach:     "#4a9fc7",
+  sights:    "#8b6db5",
+  nightlife: "#2c2416",
+  nature:    "#5a9e6f",
+  shopping:  "#c8a96e"
+};
+
+const catLabels = {
+  food:      "Φαγητό",
+  beach:     "Παραλία",
+  sights:    "Αξιοθέατο",
+  nightlife: "Νυχτερινή ζωή",
+  nature:    "Φύση",
+  shopping:  "Shopping"
+};
+
+const map = L.map('map').setView([37.085, 25.395], 12);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO',
+  maxZoom: 19
+}).addTo(map);
+
+let markers = [];
+
+function makeIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div class="marker-dot" style="background:${color}"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+    popupAnchor: [0, -10]
+  });
+}
+
+function renderMarkers(cat) {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  locations.forEach(loc => {
+    if (cat !== 'all' && loc.cat !== cat) return;
+
+    const color = catColors[loc.cat] || '#888';
+    const marker = L.marker([loc.lat, loc.lng], { icon: makeIcon(color) });
+
+    const popupHTML = `
+      <div class="popup-inner">
+        <div class="popup-cat" style="color:${color}">${catLabels[loc.cat] || loc.cat}</div>
+        <div class="popup-name">${loc.name}</div>
+        <div class="popup-desc">${loc.desc}</div>
+        <a class="popup-link" href="${loc.gmaps}" target="_blank">Άνοιγμα στο Google Maps ↗</a>
+      </div>`;
+
+    marker.bindPopup(popupHTML, { maxWidth: 260 });
+    marker.addTo(map);
+    markers.push(marker);
+  });
+}
+
+renderMarkers('all');
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderMarkers(btn.dataset.cat);
+  });
+});
+
+</script>
+</body>
+</html>
